@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>MonIT - Client Detail</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    </style>
+</head>
+<body>
+<p><a href="/">&larr; back to overview</a></p>
+<h1 th:text="${client.hostname}">host</h1>
+<p>Status: <strong th:text="${client.status}">ONLINE</strong></p>
+
+<h2>Latest metrics</h2>
+<table th:if="${latestMetric != null}">
+    <tr><th>CPU %</th><td th:text="${latestMetric.cpuPercent}">-</td></tr>
+    <tr><th>Mem %</th><td th:text="${latestMetric.memPercent}">-</td></tr>
+    <tr><th>Max disk %</th><td th:text="${latestMetric.maxDiskPercent}">-</td></tr>
+    <tr><th>Uptime (s)</th><td th:text="${latestMetric.uptimeSeconds}">-</td></tr>
+</table>
+<p th:if="${latestMetric == null}">No metrics received yet.</p>
+
+<h2>Recent check results</h2>
+<table>
+    <thead>
+    <tr><th>Time</th><th>Check</th><th>Type</th><th>Status</th><th>Message</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="check : ${checkResults}">
+        <td th:text="${check.time}">-</td>
+        <td th:text="${check.checkName}">-</td>
+        <td th:text="${check.checkType}">-</td>
+        <td th:text="${check.status}">-</td>
+        <td th:text="${check.message}">-</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Alert recipients for this host</h2>
+<p><small>These are notified in addition to the <a href="/settings/alerts">global recipient list</a>.</small></p>
+<table>
+    <thead><tr><th>Email</th><th></th></tr></thead>
+    <tbody>
+    <tr th:each="recipient : ${clientRecipients}">
+        <td th:text="${recipient.email}">-</td>
+        <td>
+            <form th:action="@{'/clients/' + ${client.id} + '/alerts/' + ${recipient.id} + '/delete'}" method="post">
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<form th:action="@{'/clients/' + ${client.id} + '/alerts'}" method="post">
+    <input type="email" name="email" placeholder="oncall@example.com" required="required"/>
+    <button type="submit">Add</button>
+</form>
+
+<h2>CPU % (recent)</h2>
+<canvas id="cpuChart" width="600" height="200"></canvas>
+<script th:inline="javascript">
+    const clientId = /*[[${client.id}]]*/ '';
+    fetch('/api/clients/' + clientId + '/metrics.json')
+        .then(r => r.json())
+        .then(data => {
+            const canvas = document.getElementById('cpuChart');
+            const ctx = canvas.getContext('2d');
+            const points = data.slice().reverse();
+            const max = 100;
+            ctx.strokeStyle = '#2a6df4';
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = (i / Math.max(points.length - 1, 1)) * canvas.width;
+                const y = canvas.height - (p.cpuPercent / max) * canvas.height;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        });
+</script>
+</body>
+</html>

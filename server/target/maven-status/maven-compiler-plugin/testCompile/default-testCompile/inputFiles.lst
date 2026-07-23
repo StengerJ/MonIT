@@ -1,0 +1,11 @@
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\AbstractIntegrationTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\alert\AlertSchedulerTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\alert\AlertStateServiceTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\mail\EmailServiceTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\metrics\RetentionPolicyInitializerTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\repository\ClientRepositoryTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\security\ApiKeyAuthFilterTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\security\MtlsConnectorConfigTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\web\DashboardControllerTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\web\RegistrationControllerTest.java
+C:\Users\Joshu\OneDrive\Documents\GitHub\MonIT\server\src\test\java\com\monit\server\web\ReportsControllerTest.java

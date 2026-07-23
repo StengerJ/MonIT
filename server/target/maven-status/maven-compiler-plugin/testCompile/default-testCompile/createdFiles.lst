@@ -1,0 +1,9 @@
+com\monit\server\AbstractIntegrationTest.class
+com\monit\server\web\RegistrationControllerTest.class
+com\monit\server\alert\AlertStateServiceTest.class
+com\monit\server\security\ApiKeyAuthFilterTest.class
+com\monit\server\web\ReportsControllerTest.class
+com\monit\server\repository\ClientRepositoryTest.class
+com\monit\server\web\DashboardControllerTest.class
+com\monit\server\alert\AlertSchedulerTest.class
+com\monit\server\mail\EmailServiceTest.class

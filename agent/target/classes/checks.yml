@@ -1,0 +1,15 @@
+checks:
+  - type: process
+    name: nginx-running
+    processName: nginx
+  - type: port
+    name: app-port-8080
+    port: 8080
+  - type: http
+    name: api-health
+    url: http://localhost:8080/health
+    expectStatus: 200
+  - type: disk
+    name: data-volume
+    path: /data
+    warnPercent: 85

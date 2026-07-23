@@ -1,0 +1,34 @@
+monit:
+  agent:
+    server-base-url: http://localhost:8081
+    bootstrap-secret: change-me-shared-secret
+    push-interval-ms: 30000
+    key-file: agent.key
+    mtls:
+      enabled: false
+      keystore:
+      keystore-password:
+      truststore:
+      truststore-password:
+    checks:
+      - type: process
+        name: nginx-running
+        processName: nginx
+      - type: port
+        name: app-port-8080
+        port: 8080
+      - type: http
+        name: api-health
+        url: http://localhost:8080/health
+        expectStatus: 200
+      - type: disk
+        name: data-volume
+        path: /data
+        warnPercent: 85
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.monit: INFO

@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/monit
+    username: monit
+    password: monit
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  mail:
+    host: ${MONIT_SMTP_HOST:localhost}
+    port: ${MONIT_SMTP_PORT:1025}
+
+monit:
+  bootstrap-secret: change-me-shared-secret
+  server:
+    alert-sweep-ms: 15000
+    retention-days: 30
+    mtls:
+      enabled: false
+      port: 8443
+      keystore:
+      keystore-password:
+      truststore:
+      truststore-password:
+
+server:
+  port: 8081
+
+logging:
+  level:
+    com.monit: INFO

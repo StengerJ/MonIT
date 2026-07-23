@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>MonIT - Alert Settings</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    </style>
+</head>
+<body>
+<p><a href="/">&larr; back to overview</a></p>
+<h1>Alert recipients</h1>
+<table>
+    <thead><tr><th>Email</th><th></th></tr></thead>
+    <tbody>
+    <tr th:each="recipient : ${recipients}">
+        <td th:text="${recipient.email}">-</td>
+        <td>
+            <form th:action="@{'/settings/alerts/' + ${recipient.id} + '/delete'}" method="post">
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Add recipient</h2>
+<form action="/settings/alerts" method="post">
+    <input type="email" name="email" placeholder="admin@example.com" required="required"/>
+    <button type="submit">Add</button>
+</form>
+</body>
+</html>

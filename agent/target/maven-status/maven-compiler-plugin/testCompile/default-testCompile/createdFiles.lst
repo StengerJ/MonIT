@@ -1,0 +1,9 @@
+com\monit\agent\checks\DiskCheckTest.class
+com\monit\agent\checks\PortCheckTest.class
+com\monit\agent\identity\RegistrationClientTest.class
+com\monit\agent\checks\HttpCheckTest.class
+com\monit\agent\metrics\MetricsCollectorTest.class
+com\monit\agent\checks\ProcessCheckTest.class
+com\monit\agent\config\ChecksFactoryTest.class
+com\monit\agent\identity\ApiKeyStoreTest.class
+com\monit\agent\schedule\ReportSchedulerTest.class
