@@ -1,6 +1,8 @@
 package com.monit.server.web;
 
 import com.monit.server.entity.AlertRecipientEntity;
+import com.monit.server.entity.ClientEntity;
+import com.monit.server.entity.ClientStatus;
 import com.monit.server.entity.MetricEntity;
 import com.monit.server.repository.AlertRecipientRepository;
 import com.monit.server.repository.CheckResultRepository;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -35,7 +38,11 @@ public class DashboardController {
 
     @GetMapping("/")
     public String overview(Model model) {
-        model.addAttribute("clients", clientRepository.findAll());
+        List<ClientEntity> clients = clientRepository.findAll();
+        model.addAttribute("clients", clients);
+        model.addAttribute("onlineCount", clients.stream().filter(c -> c.getStatus() == ClientStatus.ONLINE).count());
+        model.addAttribute("warningCount", clients.stream().filter(c -> c.getStatus() == ClientStatus.WARNING).count());
+        model.addAttribute("offlineCount", clients.stream().filter(c -> c.getStatus() == ClientStatus.OFFLINE).count());
         return "index";
     }
 

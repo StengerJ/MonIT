@@ -1,1 +1,7 @@
 docs/
+*.txt
+.txt
+*.jar
+*.*.jar
+.class
+*.class

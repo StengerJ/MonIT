@@ -17,6 +17,13 @@
     <spring-boot.version>3.3.4</spring-boot.version>
     <oshi.version>6.6.5</oshi.version>
     <testcontainers.version>1.20.1</testcontainers.version>
+    <!-- Spring Boot 3.3.4 manages Lombok 1.18.34, which predates JDK 25 support and
+         silently fails to generate any annotation-driven members on this JDK. Override
+         to a version with JDK 25 support. -->
+    <lombok.version>1.18.42</lombok.version>
+    <!-- Same JDK 25 issue for Mockito's bundled Byte Buddy (inline mock maker). -->
+    <mockito.version>5.20.0</mockito.version>
+    <byte-buddy.version>1.17.8</byte-buddy.version>
   </properties>
 
   <modules>
@@ -41,6 +48,53 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>${mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.bytebuddy</groupId>
+        <artifactId>byte-buddy</artifactId>
+        <version>${byte-buddy.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.bytebuddy</groupId>
+        <artifactId>byte-buddy-agent</artifactId>
+        <version>${byte-buddy.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Not inherited from spring-boot-starter-parent (this project only imports
+             spring-boot-dependencies for dependency management), so plugin versions
+             must be pinned explicitly or Maven resolves whatever is newest at build
+             time - e.g. it picked up spring-boot-maven-plugin 4.1.0 (the Spring Boot
+             4.x line) against this Spring Boot 3.3.4 app. -->
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.4</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>

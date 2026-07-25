@@ -27,7 +27,10 @@ public class RetentionPolicyInitializer implements ApplicationRunner {
     }
 
     private void apply(String hypertable) {
-        jdbcTemplate.update("SELECT remove_retention_policy(?, if_exists => true)", hypertable);
-        jdbcTemplate.update("SELECT add_retention_policy(?, ?::interval)", hypertable, retentionDays + " days");
+        // These are SELECT statements (they call functions that return a value), so they must go
+        // through query(...) rather than update(...) - update() rejects any statement that returns
+        // a ResultSet with "A result was returned when none was expected."
+        jdbcTemplate.query("SELECT remove_retention_policy(?, if_exists => true)", (rs, rowNum) -> null, hypertable);
+        jdbcTemplate.query("SELECT add_retention_policy(?, ?::interval)", (rs, rowNum) -> null, hypertable, retentionDays + " days");
     }
 }

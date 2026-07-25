@@ -2,31 +2,68 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>MonIT - Overview</title>
-    <style>
-        body { font-family: sans-serif; margin: 2rem; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-        .status-ONLINE { color: green; font-weight: bold; }
-        .status-WARNING { color: #b58900; font-weight: bold; }
-        .status-OFFLINE { color: red; font-weight: bold; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="color-scheme" content="dark"/>
+    <title>MonIT — Fleet</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml"/>
+    <link rel="stylesheet" th:href="@{/css/monit.css}"/>
 </head>
 <body>
-<h1>MonIT - Client Overview</h1>
-<p><a href="/settings/alerts">Alert recipient settings</a></p>
-<table>
-    <thead>
-    <tr><th>Hostname</th><th>Status</th><th>Last Seen</th><th></th></tr>
-    </thead>
-    <tbody>
-    <tr th:each="client : ${clients}">
-        <td th:text="${client.hostname}">host</td>
-        <td th:class="'status-' + ${client.status}" th:text="${client.status}">ONLINE</td>
-        <td th:text="${client.lastSeen}">-</td>
-        <td><a th:href="@{'/clients/' + ${client.id}}">details</a></td>
-    </tr>
-    </tbody>
-</table>
+<div class="shell">
+    <div th:replace="~{fragments/chrome :: topbar}"></div>
+
+    <p class="eyebrow" style="margin-bottom:8px;">Fleet status</p>
+
+    <section class="hero" aria-label="Fleet summary">
+        <div class="hero__lamp">
+            <span class="led led--ok led--lg" aria-hidden="true"></span>
+            <div>
+                <div class="hero__count" th:text="${onlineCount}">0</div>
+                <div class="hero__label">Online</div>
+            </div>
+        </div>
+        <div class="hero__lamp">
+            <span class="led led--warn led--lg" aria-hidden="true"></span>
+            <div>
+                <div class="hero__count" th:text="${warningCount}">0</div>
+                <div class="hero__label">Warning</div>
+            </div>
+        </div>
+        <div class="hero__lamp">
+            <span class="led led--fail led--lg" aria-hidden="true"></span>
+            <div>
+                <div class="hero__count" th:text="${offlineCount}">0</div>
+                <div class="hero__label">Offline</div>
+            </div>
+        </div>
+    </section>
+
+    <div th:if="${#lists.isEmpty(clients)}" class="empty">
+        <p><strong>No agents reporting yet.</strong></p>
+        <p>Point an agent at this server with its bootstrap secret — it'll appear here after its first push.</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(clients)}" class="fleet-grid">
+        <a th:each="client, stat : ${clients}"
+           th:href="@{'/clients/' + ${client.id}}"
+           th:style="'--i:' + ${stat.index}"
+           th:with="s=${client.status.name()}"
+           class="unit">
+            <div class="unit__row">
+                <span class="led"
+                      th:classappend="${s == 'ONLINE'} ? 'led--ok' : (${s == 'WARNING'} ? 'led--warn' : 'led--fail')"
+                      aria-hidden="true"></span>
+                <span class="unit__hostname" th:text="${client.hostname}">host</span>
+            </div>
+            <div class="unit__status"
+                 th:classappend="${s == 'ONLINE'} ? 'status--ok' : (${s == 'WARNING'} ? 'status--warn' : 'status--fail')"
+                 th:text="${client.status}">ONLINE</div>
+            <div class="unit__meta">
+                <span th:if="${client.lastSeen != null}" th:text="'last seen ' + ${#temporals.format(client.lastSeen, 'yyyy-MM-dd HH:mm:ss')}">last seen</span>
+                <span th:unless="${client.lastSeen != null}">never reported</span>
+            </div>
+        </a>
+    </div>
+</div>
 </body>
 </html>

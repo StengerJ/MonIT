@@ -2,83 +2,221 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>MonIT - Client Detail</title>
-    <style>
-        body { font-family: sans-serif; margin: 2rem; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="color-scheme" content="dark"/>
+    <title th:text="'MonIT — ' + ${client.hostname}">MonIT — Client</title>
+    <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml"/>
+    <link rel="stylesheet" th:href="@{/css/monit.css}"/>
 </head>
 <body>
-<p><a href="/">&larr; back to overview</a></p>
-<h1 th:text="${client.hostname}">host</h1>
-<p>Status: <strong th:text="${client.status}">ONLINE</strong></p>
+<div class="shell">
+    <div th:replace="~{fragments/chrome :: topbar}"></div>
 
-<h2>Latest metrics</h2>
-<table th:if="${latestMetric != null}">
-    <tr><th>CPU %</th><td th:text="${latestMetric.cpuPercent}">-</td></tr>
-    <tr><th>Mem %</th><td th:text="${latestMetric.memPercent}">-</td></tr>
-    <tr><th>Max disk %</th><td th:text="${latestMetric.maxDiskPercent}">-</td></tr>
-    <tr><th>Uptime (s)</th><td th:text="${latestMetric.uptimeSeconds}">-</td></tr>
-</table>
-<p th:if="${latestMetric == null}">No metrics received yet.</p>
+    <nav class="topnav" style="margin-bottom:16px;"><a href="/" class="back">Fleet</a></nav>
 
-<h2>Recent check results</h2>
-<table>
-    <thead>
-    <tr><th>Time</th><th>Check</th><th>Type</th><th>Status</th><th>Message</th></tr>
-    </thead>
-    <tbody>
-    <tr th:each="check : ${checkResults}">
-        <td th:text="${check.time}">-</td>
-        <td th:text="${check.checkName}">-</td>
-        <td th:text="${check.checkType}">-</td>
-        <td th:text="${check.status}">-</td>
-        <td th:text="${check.message}">-</td>
-    </tr>
-    </tbody>
-</table>
+    <div class="detail-head" th:with="s=${client.status.name()}">
+        <h1 th:text="${client.hostname}">hostname</h1>
+        <span class="status-chip"
+              th:classappend="${s == 'ONLINE'} ? 'status--ok' : (${s == 'WARNING'} ? 'status--warn' : 'status--fail')">
+            <span class="led"
+                  th:classappend="${s == 'ONLINE'} ? 'led--ok' : (${s == 'WARNING'} ? 'led--warn' : 'led--fail')"
+                  aria-hidden="true"></span>
+            <span th:text="${client.status}">ONLINE</span>
+        </span>
+    </div>
 
-<h2>Alert recipients for this host</h2>
-<p><small>These are notified in addition to the <a href="/settings/alerts">global recipient list</a>.</small></p>
-<table>
-    <thead><tr><th>Email</th><th></th></tr></thead>
-    <tbody>
-    <tr th:each="recipient : ${clientRecipients}">
-        <td th:text="${recipient.email}">-</td>
-        <td>
-            <form th:action="@{'/clients/' + ${client.id} + '/alerts/' + ${recipient.id} + '/delete'}" method="post">
-                <button type="submit">Remove</button>
+    <div th:if="${latestMetric == null}" class="empty" style="margin-bottom:20px;">
+        No metrics received yet — this host hasn't completed its first push.
+    </div>
+
+    <div th:if="${latestMetric != null}" class="readouts">
+        <div class="readout" th:with="v=${latestMetric.cpuPercent}">
+            <div class="readout__label">CPU</div>
+            <div class="readout__value" th:text="${#numbers.formatDecimal(v, 1, 1)} + '%'">0.0%</div>
+            <div class="readout__bar" th:classappend="${v >= 90} ? 'level--fail' : (${v >= 70} ? 'level--warn' : '')">
+                <span th:style="'width:' + ${#numbers.formatDecimal(v, 1, 1, 'POINT')} + '%'"></span>
+            </div>
+        </div>
+        <div class="readout" th:with="v=${latestMetric.memPercent}">
+            <div class="readout__label">Memory</div>
+            <div class="readout__value" th:text="${#numbers.formatDecimal(v, 1, 1)} + '%'">0.0%</div>
+            <div class="readout__bar" th:classappend="${v >= 90} ? 'level--fail' : (${v >= 70} ? 'level--warn' : '')">
+                <span th:style="'width:' + ${#numbers.formatDecimal(v, 1, 1, 'POINT')} + '%'"></span>
+            </div>
+        </div>
+        <div class="readout" th:with="v=${latestMetric.maxDiskPercent}">
+            <div class="readout__label">Max disk</div>
+            <div class="readout__value" th:text="${#numbers.formatDecimal(v, 1, 1)} + '%'">0.0%</div>
+            <div class="readout__bar" th:classappend="${v >= 90} ? 'level--fail' : (${v >= 70} ? 'level--warn' : '')">
+                <span th:style="'width:' + ${#numbers.formatDecimal(v, 1, 1, 'POINT')} + '%'"></span>
+            </div>
+        </div>
+        <div class="readout">
+            <div class="readout__label">Uptime</div>
+            <div class="readout__value" th:text="${latestMetric.uptimeSeconds}">0</div>
+        </div>
+    </div>
+
+    <section class="panel">
+        <p class="panel__title">CPU — recent</p>
+        <div class="scope">
+            <canvas id="cpuChart" width="600" height="200"></canvas>
+            <div id="scopeEmpty" class="scope__empty" style="display:none;">no samples yet</div>
+        </div>
+    </section>
+
+    <div class="two-col">
+        <section class="panel">
+            <p class="panel__title">Check log</p>
+            <div class="log" th:if="${not #lists.isEmpty(checkResults)}">
+                <div class="log__row" th:each="check : ${checkResults}" th:with="cs=${check.status}">
+                    <span class="log__time mono" th:text="${#temporals.format(check.time, 'HH:mm:ss')}">--:--:--</span>
+                    <span class="led"
+                          th:classappend="${cs == 'OK'} ? 'led--ok' : (${cs == 'WARN'} ? 'led--warn' : 'led--fail')"
+                          aria-hidden="true"></span>
+                    <span class="log__name" th:text="${check.checkName}">check</span>
+                    <span class="log__type" th:text="${check.checkType}">type</span>
+                    <span class="log__message" th:if="${check.message != null}" th:text="${check.message}">message</span>
+                </div>
+            </div>
+            <p th:if="${#lists.isEmpty(checkResults)}" class="muted-note">No checks reported yet.</p>
+        </section>
+
+        <section class="panel">
+            <p class="panel__title">Alert routing — this host</p>
+            <p class="muted-note">Notified in addition to the <a th:href="@{/settings/alerts}" style="color:var(--trace);">global list</a>.</p>
+            <div th:if="${not #lists.isEmpty(clientRecipients)}">
+                <div class="routing__row" th:each="recipient : ${clientRecipients}">
+                    <span class="routing__email" th:text="${recipient.email}">email</span>
+                    <form th:action="@{'/clients/' + ${client.id} + '/alerts/' + ${recipient.id} + '/delete'}" method="post">
+                        <button type="submit" class="ghost-btn">Remove</button>
+                    </form>
+                </div>
+            </div>
+            <p th:if="${#lists.isEmpty(clientRecipients)}" class="muted-note">No host-specific recipients yet.</p>
+            <form th:action="@{'/clients/' + ${client.id} + '/alerts'}" method="post" class="routing__form">
+                <input type="email" name="email" placeholder="oncall@example.com" required="required"/>
+                <button type="submit" class="solid-btn">Add</button>
             </form>
-        </td>
-    </tr>
-    </tbody>
-</table>
-<form th:action="@{'/clients/' + ${client.id} + '/alerts'}" method="post">
-    <input type="email" name="email" placeholder="oncall@example.com" required="required"/>
-    <button type="submit">Add</button>
-</form>
+        </section>
+    </div>
+</div>
 
-<h2>CPU % (recent)</h2>
-<canvas id="cpuChart" width="600" height="200"></canvas>
 <script th:inline="javascript">
+(function () {
     const clientId = /*[[${client.id}]]*/ '';
-    fetch('/api/clients/' + clientId + '/metrics.json')
-        .then(r => r.json())
-        .then(data => {
-            const canvas = document.getElementById('cpuChart');
-            const ctx = canvas.getContext('2d');
-            const points = data.slice().reverse();
-            const max = 100;
-            ctx.strokeStyle = '#2a6df4';
+    const canvas = document.getElementById('cpuChart');
+    const emptyLabel = document.getElementById('scopeEmpty');
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const style = getComputedStyle(document.documentElement);
+    const traceColor = style.getPropertyValue('--trace').trim() || '#5fc8e0';
+    const gridColor = 'rgba(130,160,175,0.14)';
+    const labelColor = style.getPropertyValue('--faint').trim() || '#4d5c66';
+
+    function sizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * ratio;
+        canvas.height = 200 * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        return { w: rect.width, h: 200 };
+    }
+
+    function drawFrame(size, points, progress) {
+        const { w, h } = size;
+        const padL = 30, padR = 8, padT = 10, padB = 18;
+        const plotW = w - padL - padR;
+        const plotH = h - padT - padB;
+
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 1;
+        ctx.font = '10px ' + (style.getPropertyValue('--mono') || 'monospace');
+        ctx.fillStyle = labelColor;
+        [0, 50, 100].forEach(function (pct) {
+            const y = padT + plotH - (pct / 100) * plotH;
             ctx.beginPath();
-            points.forEach((p, i) => {
-                const x = (i / Math.max(points.length - 1, 1)) * canvas.width;
-                const y = canvas.height - (p.cpuPercent / max) * canvas.height;
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            });
+            ctx.moveTo(padL, y);
+            ctx.lineTo(w - padR, y);
             ctx.stroke();
+            ctx.fillText(pct + '%', 2, y + 3);
         });
+
+        if (!points.length) return;
+
+        const visibleCount = Math.max(1, Math.round(points.length * progress));
+        const visible = points.slice(0, visibleCount);
+
+        function xy(i) {
+            const x = padL + (points.length > 1 ? (i / (points.length - 1)) * plotW : 0);
+            const y = padT + plotH - (Math.max(0, Math.min(100, points[i])) / 100) * plotH;
+            return [x, y];
+        }
+
+        ctx.beginPath();
+        visible.forEach(function (_, i) {
+            const [x, y] = xy(i);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        if (visible.length) {
+            const [lastX] = xy(visible.length - 1);
+            ctx.lineTo(lastX, padT + plotH);
+            ctx.lineTo(padL, padT + plotH);
+            ctx.closePath();
+            const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+            grad.addColorStop(0, traceColor.trim() + '55');
+            grad.addColorStop(1, traceColor.trim() + '00');
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        ctx.beginPath();
+        visible.forEach(function (_, i) {
+            const [x, y] = xy(i);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = traceColor;
+        ctx.lineWidth = 1.75;
+        ctx.shadowColor = traceColor;
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    fetch('/api/clients/' + clientId + '/metrics.json')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            const points = data.slice().reverse().map(function (p) { return p.cpuPercent; });
+            const size = sizeCanvas();
+
+            if (!points.length) {
+                emptyLabel.style.display = 'flex';
+                drawFrame(size, [], 1);
+                return;
+            }
+
+            if (reduceMotion) {
+                drawFrame(size, points, 1);
+                return;
+            }
+
+            const start = performance.now();
+            const duration = 650;
+            function step(now) {
+                const progress = Math.min(1, (now - start) / duration);
+                drawFrame(size, points, progress);
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        })
+        .catch(function () {
+            emptyLabel.textContent = 'unable to load metrics';
+            emptyLabel.style.display = 'flex';
+        });
+})();
 </script>
 </body>
 </html>
